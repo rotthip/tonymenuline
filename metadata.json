@@ -1,0 +1,6 @@
+{
+  "name": "MenuShowcase - Digital Restaurant Menu",
+  "description": "Zero-cost digital menu viewer with mouse drag-and-drop reordering, high-res PNG zoom, and free GitHub Pages publishing.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
