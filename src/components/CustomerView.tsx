@@ -116,40 +116,15 @@ export const CustomerView: React.FC<CustomerViewProps> = ({
                 </div>
               </div>
 
-              {/* Card Meta Content */}
-              <div className="p-4 flex flex-col flex-1 justify-between gap-2 bg-slate-900/90">
-                <div>
-                  <div className="flex items-center justify-between gap-2 text-xs text-amber-400 font-medium">
-                    <span className="inline-flex items-center gap-1 text-[11px] font-mono text-slate-400 truncate">
-                      <FileImage className="w-3 h-3 text-amber-400 shrink-0" />
-                      {item.fileName || `menu_${idx + 1}.png`}
-                    </span>
-                    {item.priceRange && (
-                      <span className="font-semibold text-emerald-400 shrink-0 font-mono">
-                        {item.priceRange}
-                      </span>
-                    )}
-                  </div>
-                  <h3 className="text-sm font-semibold text-white mt-1 group-hover:text-amber-300 transition-colors line-clamp-1">
-                    {item.title}
-                  </h3>
-                  {item.description && (
-                    <p className="text-xs text-slate-400 mt-1 line-clamp-2 leading-relaxed">
-                      {item.description}
-                    </p>
-                  )}
-                </div>
-
-                {/* Tags */}
-                {item.tags && item.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 pt-2 border-t border-slate-800/80 text-[11px] text-slate-400">
-                    {item.tags.map((tag) => (
-                      <span key={tag} className="text-slate-400">
-                        #{tag}
-                      </span>
-                    ))}
-                  </div>
-                )}
+              {/* Card Footer: Clean file label and page number */}
+              <div className="p-3 bg-slate-900/90 flex items-center justify-between gap-2 border-t border-slate-800">
+                <span className="inline-flex items-center gap-1.5 text-xs font-mono text-slate-300 truncate">
+                  <FileImage className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                  {item.fileName || `menu_${idx + 1}.png`}
+                </span>
+                <span className="text-xs font-mono text-amber-400 font-bold shrink-0">
+                  หน้า {idx + 1}
+                </span>
               </div>
             </div>
           ))}
@@ -206,24 +181,13 @@ export const CustomerView: React.FC<CustomerViewProps> = ({
               </div>
             </div>
 
-            <div className="p-4 sm:p-6 bg-slate-900 border-t border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div>
-                <span className="text-xs font-mono font-medium text-amber-400">
-                  {currentBookMenu.fileName || `หน้า ${activeBookIndex + 1}`}
-                </span>
-                <h3 className="text-lg font-bold text-white mt-0.5">{currentBookMenu.title}</h3>
-                {currentBookMenu.description && (
-                  <p className="text-xs text-slate-300 mt-1 max-w-xl">{currentBookMenu.description}</p>
-                )}
-              </div>
-              {currentBookMenu.priceRange && (
-                <div className="text-right">
-                  <span className="text-xs text-slate-400 block">ช่วงราคา</span>
-                  <span className="text-sm font-semibold text-emerald-400 font-mono">
-                    {currentBookMenu.priceRange}
-                  </span>
-                </div>
-              )}
+            <div className="p-3 sm:p-4 bg-slate-900 border-t border-slate-800 flex items-center justify-between">
+              <span className="text-xs font-mono font-medium text-amber-400">
+                {currentBookMenu.fileName || `หน้า ${activeBookIndex + 1}`}
+              </span>
+              <span className="text-xs text-slate-400">
+                แตะเพื่อซูมขนาดเต็ม (Click to zoom)
+              </span>
             </div>
           </div>
         </div>

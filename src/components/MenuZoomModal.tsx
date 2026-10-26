@@ -10,8 +10,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Download,
-  Move,
-  Info
+  Move
 } from 'lucide-react';
 
 interface MenuZoomModalProps {
@@ -35,7 +34,6 @@ export const MenuZoomModal: React.FC<MenuZoomModalProps> = ({
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [dragStart, setDragStart] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
-  const [showInfo, setShowInfo] = useState<boolean>(true);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const currentIndex = menu ? menus.findIndex((m) => m.id === menu.id) : -1;
@@ -176,22 +174,14 @@ export const MenuZoomModal: React.FC<MenuZoomModalProps> = ({
             {currentIndex + 1} / {menus.length}
           </span>
           <div className="truncate">
-            <h2 className="text-sm font-semibold text-white truncate">{menu.title}</h2>
-            <p className="text-xs text-slate-400 truncate">{menu.category}</p>
+            <h2 className="text-sm font-semibold text-white truncate font-mono">
+              {menu.fileName || menu.title}
+            </h2>
           </div>
         </div>
 
         {/* Action Controls */}
         <div className="flex items-center gap-1.5 shrink-0">
-          <button
-            onClick={() => setShowInfo(!showInfo)}
-            title="Toggle details"
-            className={`p-2 rounded-lg text-xs font-medium transition-colors ${
-              showInfo ? 'bg-amber-500/20 text-amber-300' : 'text-slate-400 hover:text-white hover:bg-slate-800'
-            }`}
-          >
-            <Info className="w-4 h-4" />
-          </button>
 
           <div className="hidden sm:flex items-center gap-1 px-2 py-1 bg-slate-800/80 rounded-lg border border-slate-700/50">
             <button
@@ -312,19 +302,6 @@ export const MenuZoomModal: React.FC<MenuZoomModalProps> = ({
           <div className="absolute bottom-4 left-4 z-20 flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/80 border border-slate-700/60 text-xs text-slate-300 backdrop-blur-sm">
             <Move className="w-3.5 h-3.5 text-amber-400" />
             <span>ลากเมาส์เพื่อเลื่อนดูส่วนต่างๆ (Drag to pan)</span>
-          </div>
-        )}
-
-        {/* Floating Description Drawer if enabled */}
-        {showInfo && menu.description && (
-          <div className="absolute bottom-4 right-4 max-w-sm z-20 p-4 rounded-xl bg-slate-900/90 border border-slate-700/80 backdrop-blur-md shadow-xl text-left">
-            <div className="flex items-center justify-between mb-1.5">
-              <span className="text-xs font-medium text-amber-400">{menu.category}</span>
-              {menu.priceRange && (
-                <span className="text-xs font-semibold text-emerald-400">{menu.priceRange}</span>
-              )}
-            </div>
-            <p className="text-xs text-slate-300 leading-relaxed">{menu.description}</p>
           </div>
         )}
       </div>

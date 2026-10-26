@@ -47,12 +47,6 @@ export const AdminView: React.FC<AdminViewProps> = ({
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
   // New Menu Form State
-  const [newTitle, setNewTitle] = useState<string>('');
-  const [newCategory, setNewCategory] = useState<string>('อาหารจานหลัก (Main Courses)');
-  const [newCustomCategory, setNewCustomCategory] = useState<string>('');
-  const [newPriceRange, setNewPriceRange] = useState<string>('');
-  const [newDescription, setNewDescription] = useState<string>('');
-  const [newTags, setNewTags] = useState<string>('เมนูใหม่, แนะนำ');
   const [uploadedImageData, setUploadedImageData] = useState<string>('');
   const [fileName, setFileName] = useState<string>('');
   const [fileSize, setFileSize] = useState<string>('');
@@ -61,16 +55,6 @@ export const AdminView: React.FC<AdminViewProps> = ({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const editFileInputRef = useRef<HTMLInputElement>(null);
-
-  const defaultCategories = [
-    'อาหารจานหลัก (Main Courses)',
-    'ของทานเล่น (Appetizers)',
-    'เครื่องดื่ม (Beverages)',
-    'ของหวาน (Desserts)',
-    'เซ็ตสุดคุ้ม (Value Sets)',
-    'เมนูแนะนำพิเศษ (Chef Specials)',
-    'กำหนดเอง (Custom)',
-  ];
 
   // Handle local PNG file selection
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -89,11 +73,6 @@ export const AdminView: React.FC<AdminViewProps> = ({
     reader.onload = (event) => {
       const result = event.target?.result as string;
       setUploadedImageData(result);
-      if (!newTitle) {
-        // Suggest title from filename
-        const cleanName = file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
-        setNewTitle(cleanName);
-      }
     };
     reader.readAsDataURL(file);
   };
@@ -108,39 +87,24 @@ export const AdminView: React.FC<AdminViewProps> = ({
     }
   };
 
-  // Submit new menu
+  // Submit new menu (Only image is required, zero text fields)
   const handleCreateMenu = (e: React.FormEvent) => {
     e.preventDefault();
     const finalImageUrl = imageSourceMode === 'url' ? externalUrl : uploadedImageData;
 
     if (!finalImageUrl) {
-      alert('กรุณาเลือกรูปภาพใบเมนู PNG หรือใส่ URL (Please provide a menu image)');
-      return;
-    }
-    if (!newTitle.trim()) {
-      alert('กรุณากรอกชื่อใบเมนู (Please enter a menu title)');
+      alert('กรุณาเลือกหรืออัปโหลดรูปใบเมนู PNG');
       return;
     }
 
-    const categoryToUse =
-      newCategory === 'กำหนดเอง (Custom)'
-        ? newCustomCategory || 'ทั่วไป (General)'
-        : newCategory;
-
-    const parsedTags = newTags
-      .split(',')
-      .map((t) => t.trim())
-      .filter(Boolean);
+    const cleanName = fileName || (imageSourceMode === 'url' ? externalUrl.split('/').pop() || 'menu.png' : 'menu.png');
 
     const newMenuItem: MenuItem = {
       id: 'menu-' + Date.now(),
-      title: newTitle.trim(),
-      category: categoryToUse,
+      title: cleanName,
+      category: 'เมนูอาหาร',
       imageUrl: finalImageUrl,
-      priceRange: newPriceRange.trim() || undefined,
-      description: newDescription.trim() || undefined,
-      tags: parsedTags,
-      fileName: fileName || 'menu_item.png',
+      fileName: cleanName,
       fileSize: fileSize || '1.0 MB',
       order: menus.length,
       createdAt: new Date().toISOString(),
@@ -150,9 +114,6 @@ export const AdminView: React.FC<AdminViewProps> = ({
     onAddMenu(newMenuItem);
 
     // Reset Form
-    setNewTitle('');
-    setNewDescription('');
-    setNewPriceRange('');
     setUploadedImageData('');
     setExternalUrl('');
     setFileName('');
@@ -227,12 +188,10 @@ export const AdminView: React.FC<AdminViewProps> = ({
     if (!editingMenu) return;
 
     onUpdateMenu(editingMenu.id, {
-      title: editingMenu.title,
-      category: editingMenu.category,
-      priceRange: editingMenu.priceRange,
-      description: editingMenu.description,
       imageUrl: editingMenu.imageUrl,
-      tags: editingMenu.tags,
+      fileName: editingMenu.fileName,
+      fileSize: editingMenu.fileSize,
+      title: editingMenu.fileName || editingMenu.title,
     });
 
     setEditingMenu(null);
@@ -381,211 +340,131 @@ export const AdminView: React.FC<AdminViewProps> = ({
             </button>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Left: Image Upload & Dropzone */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setImageSourceMode('upload')}
-                  className={`px-3 py-1 text-xs font-medium rounded-lg transition-colors ${
-                    imageSourceMode === 'upload'
-                      ? 'bg-amber-500 text-slate-950 font-semibold'
-                      : 'bg-slate-800 text-slate-400'
-                  }`}
-                >
-                  อัปโหลดไฟล์ PNG จากเครื่อง
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setImageSourceMode('url')}
-                  className={`px-3 py-1 text-xs font-medium rounded-lg transition-colors ${
-                    imageSourceMode === 'url'
-                      ? 'bg-amber-500 text-slate-950 font-semibold'
-                      : 'bg-slate-800 text-slate-400'
-                  }`}
-                >
-                  ลิงก์รูปภาพ (GitHub Raw URL)
-                </button>
-              </div>
-
-              {imageSourceMode === 'upload' ? (
-                <div
-                  onDragOver={(e) => e.preventDefault()}
-                  onDrop={handleFileDrop}
-                  onClick={() => fileInputRef.current?.click()}
-                  className={`relative flex flex-col items-center justify-center border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors ${
-                    uploadedImageData
-                      ? 'border-amber-500/50 bg-amber-500/5'
-                      : 'border-slate-700 hover:border-amber-500/40 bg-slate-950/40'
-                  }`}
-                >
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/png,image/jpeg,image/webp"
-                    onChange={handleFileChange}
-                    className="hidden"
-                  />
-
-                  {uploadedImageData ? (
-                    <div className="space-y-3">
-                      <div className="relative max-h-48 overflow-hidden rounded-lg border border-slate-700 shadow-md">
-                        <img
-                          src={uploadedImageData}
-                          alt="Preview"
-                          className="max-h-48 w-auto object-contain mx-auto"
-                        />
-                      </div>
-                      <div className="text-xs text-amber-300 font-medium">
-                        {fileName} ({fileSize})
-                      </div>
-                      <p className="text-[11px] text-slate-400">
-                        คลิกเพื่อเปลี่ยนรูปภาพใหม่ หรือลากไฟล์มาวางทับได้
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center mx-auto text-amber-400">
-                        <Upload className="w-6 h-6" />
-                      </div>
-                      <p className="text-sm font-semibold text-slate-200">
-                        คลิกเพื่อเลือกไฟล์ หรือลากไฟล์รูป PNG มาวางที่นี่
-                      </p>
-                      <p className="text-xs text-slate-400">
-                        รองรับไฟล์ PNG, JPG, WebP คุณภาพสูง
-                      </p>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <label className="text-xs font-medium text-slate-300 block">
-                    GitHub Raw Image URL หรือ ลิงก์ตรงของรูปภาพ
-                  </label>
-                  <input
-                    type="url"
-                    placeholder="https://raw.githubusercontent.com/username/repo/main/public/menus/dish.png"
-                    value={externalUrl}
-                    onChange={(e) => setExternalUrl(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500"
-                  />
-                  <p className="text-[11px] text-slate-400">
-                    สามารถใส่ลิงก์รูปเมนูที่ฝากไว้ใน GitHub Repository ได้โดยตรง
-                  </p>
-                  {externalUrl && (
-                    <div className="p-2 border border-slate-700 rounded-lg max-h-36 overflow-hidden">
-                      <img
-                        src={externalUrl}
-                        alt="Preview"
-                        className="max-h-32 object-contain mx-auto"
-                        onError={(e) => {
-                          (e.target as HTMLElement).style.display = 'none';
-                        }}
-                      />
-                    </div>
-                  )}
-                </div>
-              )}
+          <div className="max-w-xl mx-auto space-y-4">
+            {/* Image Source Mode Selector */}
+            <div className="flex items-center justify-center gap-2">
+              <button
+                type="button"
+                onClick={() => setImageSourceMode('upload')}
+                className={`px-4 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                  imageSourceMode === 'upload'
+                    ? 'bg-amber-500 text-slate-950 font-semibold'
+                    : 'bg-slate-800 text-slate-400 hover:text-white'
+                }`}
+              >
+                อัปโหลดไฟล์ PNG จากเครื่อง
+              </button>
+              <button
+                type="button"
+                onClick={() => setImageSourceMode('url')}
+                className={`px-4 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                  imageSourceMode === 'url'
+                    ? 'bg-amber-500 text-slate-950 font-semibold'
+                    : 'bg-slate-800 text-slate-400 hover:text-white'
+                }`}
+              >
+                ลิงก์รูปภาพ (GitHub Raw URL)
+              </button>
             </div>
 
-            {/* Right: Menu Details Fields */}
-            <div className="space-y-3.5">
-              <div>
-                <label className="text-xs font-semibold text-slate-300 block mb-1">
-                  ชื่อใบเมนู (Menu Title) *
-                </label>
+            {imageSourceMode === 'upload' ? (
+              <div
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={handleFileDrop}
+                onClick={() => fileInputRef.current?.click()}
+                className={`relative flex flex-col items-center justify-center border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors ${
+                  uploadedImageData
+                    ? 'border-amber-500/50 bg-amber-500/5'
+                    : 'border-slate-700 hover:border-amber-500/40 bg-slate-950/40'
+                }`}
+              >
                 <input
-                  type="text"
-                  required
-                  placeholder="เช่น Signature Steak & Pasta, อาหารชุดสุดคุ้ม..."
-                  value={newTitle}
-                  onChange={(e) => setNewTitle(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  onChange={handleFileChange}
+                  className="hidden"
                 />
-              </div>
 
-              <div>
-                <label className="text-xs font-semibold text-slate-300 block mb-1">
-                  หมวดหมู่ (Category) *
-                </label>
-                <select
-                  value={newCategory}
-                  onChange={(e) => setNewCategory(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-xs text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
-                >
-                  {defaultCategories.map((cat) => (
-                    <option key={cat} value={cat}>
-                      {cat}
-                    </option>
-                  ))}
-                </select>
-
-                {newCategory === 'กำหนดเอง (Custom)' && (
-                  <input
-                    type="text"
-                    placeholder="พิมพ์ชื่อหมวดหมู่ที่ต้องการ..."
-                    value={newCustomCategory}
-                    onChange={(e) => setNewCustomCategory(e.target.value)}
-                    className="w-full mt-2 px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500"
-                  />
+                {uploadedImageData ? (
+                  <div className="space-y-3">
+                    <div className="relative max-h-56 overflow-hidden rounded-lg border border-slate-700 shadow-md">
+                      <img
+                        src={uploadedImageData}
+                        alt="Preview"
+                        className="max-h-56 w-auto object-contain mx-auto"
+                      />
+                    </div>
+                    <div className="text-xs text-amber-300 font-mono font-medium">
+                      {fileName} ({fileSize})
+                    </div>
+                    <p className="text-[11px] text-slate-400">
+                      คลิกเพื่อเลือกรูปใหม่ หรือลากไฟล์มาวางทับได้
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-2 py-4">
+                    <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center mx-auto text-amber-400">
+                      <Upload className="w-6 h-6" />
+                    </div>
+                    <p className="text-sm font-semibold text-slate-200">
+                      คลิกเพื่อเลือกไฟล์ หรือลากไฟล์รูปใบเมนู PNG มาวางที่นี่
+                    </p>
+                    <p className="text-xs text-slate-400">
+                      ระบบจะโหลดรูปใบเมนูให้ลูกค้าดูทันที โดยไม่ต้องพิมพ์ข้อมูลใดๆ
+                    </p>
+                  </div>
                 )}
               </div>
-
-              <div>
-                <label className="text-xs font-semibold text-slate-300 block mb-1">
-                  ช่วงราคา (Price Range / Optional)
+            ) : (
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-slate-300 block">
+                  GitHub Raw Image URL หรือ ลิงก์ตรงของรูปภาพ
                 </label>
                 <input
-                  type="text"
-                  placeholder="เช่น ฿150 - ฿390 หรือ $12 - $25"
-                  value={newPriceRange}
-                  onChange={(e) => setNewPriceRange(e.target.value)}
+                  type="url"
+                  placeholder="https://raw.githubusercontent.com/username/repo/main/public/menus/dish.png"
+                  value={externalUrl}
+                  onChange={(e) => setExternalUrl(e.target.value)}
                   className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500"
                 />
+                <p className="text-[11px] text-slate-400">
+                  สามารถใส่ลิงก์รูปเมนูที่ฝากไว้ใน GitHub Repository ได้โดยตรง
+                </p>
+                {externalUrl && (
+                  <div className="p-2 border border-slate-700 rounded-lg max-h-48 overflow-hidden">
+                    <img
+                      src={externalUrl}
+                      alt="Preview"
+                      className="max-h-44 object-contain mx-auto"
+                      onError={(e) => {
+                        (e.target as HTMLElement).style.display = 'none';
+                      }}
+                    />
+                  </div>
+                )}
               </div>
+            )}
 
-              <div>
-                <label className="text-xs font-semibold text-slate-300 block mb-1">
-                  คำอธิบายหรือไฮไลท์เมนู (Notes / Highlights)
-                </label>
-                <textarea
-                  rows={2}
-                  placeholder="ระบุเมนูเด่น วัตถุดิบพิเศษ หรือโปรโมชั่นในใบนี้..."
-                  value={newDescription}
-                  onChange={(e) => setNewDescription(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-slate-300 block mb-1">
-                  แท็กคำค้นหา (Tags คั่นด้วยจุลภาค)
-                </label>
-                <input
-                  type="text"
-                  placeholder="เช่น Best Seller, เผ็ด, มังสวิรัติ, แนะนำ"
-                  value={newTags}
-                  onChange={(e) => setNewTags(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500"
-                />
-              </div>
-
-              <div className="pt-2 flex items-center justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={() => setIsUploading(false)}
-                  className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 transition-colors"
-                >
-                  ยกเลิก
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold transition-all shadow-md active:scale-95"
-                >
-                  บันทึกใบเมนูใหม่
-                </button>
-              </div>
+            <div className="flex items-center justify-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setUploadedImageData('');
+                  setExternalUrl('');
+                  setIsUploading(false);
+                }}
+                className="px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 transition-colors"
+              >
+                ยกเลิก
+              </button>
+              <button
+                type="submit"
+                disabled={!uploadedImageData && !externalUrl}
+                className="px-6 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-40 text-slate-950 text-xs font-bold transition-all shadow-md active:scale-95"
+              >
+                บันทึกและเพิ่มรูปใบเมนูนี้
+              </button>
             </div>
           </div>
         </form>
@@ -646,26 +525,11 @@ export const AdminView: React.FC<AdminViewProps> = ({
                   </div>
 
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[11px] font-medium text-amber-400 truncate">
-                        {item.category}
-                      </span>
-                      {item.priceRange && (
-                        <span className="text-[11px] font-semibold text-emerald-400 font-mono">
-                          {item.priceRange}
-                        </span>
-                      )}
-                    </div>
-                    <h4 className="text-sm font-semibold text-white truncate group-hover:text-amber-300 transition-colors">
-                      {item.title}
+                    <h4 className="text-sm font-semibold text-white truncate group-hover:text-amber-300 transition-colors font-mono">
+                      {item.fileName || item.title || `menu_${index + 1}.png`}
                     </h4>
-                    {item.description && (
-                      <p className="text-xs text-slate-400 truncate max-w-md mt-0.5">
-                        {item.description}
-                      </p>
-                    )}
-                    <span className="text-[10px] text-slate-500 block mt-0.5">
-                      {item.fileName || 'menu.png'} · {item.fileSize || '1.0 MB'}
+                    <span className="text-[11px] text-slate-400 block mt-0.5">
+                      ขนาด: {item.fileSize || '1.0 MB'} · หน้า {index + 1}
                     </span>
                   </div>
                 </div>
@@ -767,63 +631,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
               </div>
             </div>
 
-            <div>
-              <label className="text-xs font-medium text-slate-300 block mb-1">
-                ชื่อใบเมนู
-              </label>
-              <input
-                type="text"
-                required
-                value={editingMenu.title}
-                onChange={(e) =>
-                  setEditingMenu({ ...editingMenu, title: e.target.value })
-                }
-                className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-xs text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
-              />
-            </div>
 
-            <div>
-              <label className="text-xs font-medium text-slate-300 block mb-1">
-                หมวดหมู่
-              </label>
-              <input
-                type="text"
-                required
-                value={editingMenu.category}
-                onChange={(e) =>
-                  setEditingMenu({ ...editingMenu, category: e.target.value })
-                }
-                className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-xs text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
-              />
-            </div>
-
-            <div>
-              <label className="text-xs font-medium text-slate-300 block mb-1">
-                ช่วงราคา
-              </label>
-              <input
-                type="text"
-                value={editingMenu.priceRange || ''}
-                onChange={(e) =>
-                  setEditingMenu({ ...editingMenu, priceRange: e.target.value })
-                }
-                className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-xs text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
-              />
-            </div>
-
-            <div>
-              <label className="text-xs font-medium text-slate-300 block mb-1">
-                คำอธิบายหรือรายการอาหารเด่น
-              </label>
-              <textarea
-                rows={3}
-                value={editingMenu.description || ''}
-                onChange={(e) =>
-                  setEditingMenu({ ...editingMenu, description: e.target.value })
-                }
-                className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-xs text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
-              />
-            </div>
 
             <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
               <button
