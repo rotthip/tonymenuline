@@ -2,16 +2,12 @@ import React, { useState, useMemo } from 'react';
 import { MenuItem } from '../types/menu';
 import { sortMenusByFileNameNumber } from '../services/storage';
 import {
-  Search,
   ZoomIn,
   BookOpen,
   LayoutGrid,
   ChevronLeft,
   ChevronRight,
-  Sparkles,
-  QrCode,
-  FileImage,
-  ArrowDown10
+  FileImage
 } from 'lucide-react';
 
 interface CustomerViewProps {
@@ -23,143 +19,67 @@ interface CustomerViewProps {
 export const CustomerView: React.FC<CustomerViewProps> = ({
   menus,
   onOpenZoom,
-  onOpenQR,
 }) => {
-  const [searchQuery, setSearchQuery] = useState<string>('');
   const [displayMode, setDisplayMode] = useState<'grid' | 'book'>('grid');
   const [activeBookIndex, setActiveBookIndex] = useState<number>(0);
 
-  // Sort all menus by numeric sequence in fileName from least to greatest (น้อย ไป มาก)
-  const sortedAndFilteredMenus = useMemo(() => {
-    const sorted = sortMenusByFileNameNumber(menus);
-    if (!searchQuery.trim()) return sorted;
+  // Automatically sorted by numeric sequence in fileName from least to greatest (น้อย ไป มาก)
+  const sortedMenus = useMemo(() => {
+    return sortMenusByFileNameNumber(menus);
+  }, [menus]);
 
-    const query = searchQuery.toLowerCase().trim();
-    return sorted.filter((menu) =>
-      menu.title.toLowerCase().includes(query) ||
-      menu.fileName?.toLowerCase().includes(query) ||
-      menu.description?.toLowerCase().includes(query) ||
-      menu.tags?.some((t) => t.toLowerCase().includes(query))
-    );
-  }, [menus, searchQuery]);
-
-  const currentBookMenu = sortedAndFilteredMenus[activeBookIndex] || sortedAndFilteredMenus[0];
+  const currentBookMenu = sortedMenus[activeBookIndex] || sortedMenus[0];
 
   return (
     <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-      {/* Hero Welcome Banner */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-amber-950/40 border border-slate-800 p-6 sm:p-8 shadow-xl">
-        <div className="relative z-10 max-w-2xl space-y-2">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-xs font-medium text-amber-300">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Digital Menu Board · ใบเมนูอาหารและเครื่องดื่ม</span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
-            ยินดีต้อนรับสู่เมนูอาหารของเรา
-          </h1>
-          <p className="text-sm text-slate-300 leading-relaxed">
-            แสดงใบเมนูทั้งหมดเรียงตามลำดับเลขชื่อไฟล์จากน้อยไปมาก แตะหรือคลิกที่ใบเมนูเพื่อซูมดูรายการอาหาร วัตถุดิบ และราคาอย่างละเอียด
-          </p>
-        </div>
+      {/* Top Header Strip: Total Count & Layout View Switcher */}
+      <div className="flex items-center justify-between px-1">
+        <span className="text-xs font-mono text-slate-400">
+          ทั้งหมด {sortedMenus.length} ใบเมนู
+        </span>
 
-        {/* QR Code Quick Standee Trigger */}
-        <div className="mt-4 sm:mt-0 sm:absolute sm:right-6 sm:top-1/2 sm:-translate-y-1/2 flex items-center gap-3">
+        {/* Mode Switch: Grid vs Book */}
+        <div className="flex items-center p-1 bg-slate-900/90 rounded-lg border border-slate-800 shrink-0">
           <button
-            onClick={onOpenQR}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700 text-sm font-medium text-amber-300 hover:text-white transition-all shadow-md active:scale-95 whitespace-nowrap"
+            onClick={() => setDisplayMode('grid')}
+            title="Grid View (มุมมองตารางทั้งหมด)"
+            className={`p-1.5 rounded-md transition-colors ${
+              displayMode === 'grid'
+                ? 'bg-amber-500 text-slate-950 font-semibold shadow-sm'
+                : 'text-slate-400 hover:text-white'
+            }`}
           >
-            <QrCode className="w-4 h-4 text-amber-400" />
-            <span>QR โต๊ะ / สแกนดูเมนู</span>
+            <LayoutGrid className="w-4 h-4" />
           </button>
-        </div>
-      </div>
-
-      {/* Control Bar: Sorting indicator, Search & Layout View Toggles */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl bg-slate-900/60 border border-slate-800 backdrop-blur-sm">
-        {/* Sorting indicator & Count */}
-        <div className="flex items-center gap-2 text-xs text-slate-300">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800/90 border border-slate-700/80 font-medium text-amber-300">
-            <ArrowDown10 className="w-4 h-4 text-amber-400" />
-            <span>เรียงตามเลขชื่อไฟล์ (น้อย → มาก)</span>
-          </div>
-          <span className="text-slate-400">
-            ทั้งหมด {sortedAndFilteredMenus.length} ใบเมนู
-          </span>
-        </div>
-
-        {/* Search & Layout Toggles */}
-        <div className="flex items-center gap-3">
-          <div className="relative flex-1 sm:w-64">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-            <input
-              type="text"
-              placeholder="ค้นหาชื่ออาหาร / ชื่อไฟล์เมนู..."
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                setActiveBookIndex(0);
-              }}
-              className="w-full pl-9 pr-4 py-1.5 rounded-lg bg-slate-800/90 border border-slate-700/80 text-xs text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-white"
-              >
-                ✕
-              </button>
-            )}
-          </div>
-
-          {/* Mode Switch: Grid vs Book */}
-          <div className="flex items-center p-1 bg-slate-800/90 rounded-lg border border-slate-700/60 shrink-0">
-            <button
-              onClick={() => setDisplayMode('grid')}
-              title="Grid View (มุมมองตารางทั้งหมด)"
-              className={`p-1.5 rounded-md transition-colors ${
-                displayMode === 'grid'
-                  ? 'bg-amber-500 text-slate-950 font-semibold'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              <LayoutGrid className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => setDisplayMode('book')}
-              title="Book View (มุมมองเล่มเมนูเปิดทีละหน้า)"
-              className={`p-1.5 rounded-md transition-colors ${
-                displayMode === 'book'
-                  ? 'bg-amber-500 text-slate-950 font-semibold'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              <BookOpen className="w-4 h-4" />
-            </button>
-          </div>
+          <button
+            onClick={() => setDisplayMode('book')}
+            title="Book View (มุมมองเล่มเมนูเปิดทีละหน้า)"
+            className={`p-1.5 rounded-md transition-colors ${
+              displayMode === 'book'
+                ? 'bg-amber-500 text-slate-950 font-semibold shadow-sm'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <BookOpen className="w-4 h-4" />
+          </button>
         </div>
       </div>
 
       {/* Empty State */}
-      {sortedAndFilteredMenus.length === 0 && (
+      {sortedMenus.length === 0 && (
         <div className="text-center py-16 px-4 rounded-2xl bg-slate-900/40 border border-dashed border-slate-800">
           <BookOpen className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-          <h3 className="text-base font-semibold text-slate-300">ไม่พบใบเมนูที่ค้นหา</h3>
+          <h3 className="text-base font-semibold text-slate-300">ยังไม่มีใบเมนูในระบบ</h3>
           <p className="text-xs text-slate-500 mt-1">
-            ลองเปลี่ยนคำค้นหาเพื่อดูเมนูทั้งหมด
+            สลับไปยังโหมด "จัดการเมนู (Admin)" เพื่อเพิ่มรูปใบเมนูใหม่
           </p>
-          <button
-            onClick={() => setSearchQuery('')}
-            className="mt-4 px-4 py-2 rounded-lg bg-amber-500 text-slate-950 text-xs font-semibold hover:bg-amber-400 transition-colors"
-          >
-            แสดงเมนูทั้งหมด
-          </button>
         </div>
       )}
 
       {/* All Menus in a Single Page Grid (เรียงตามเลขชื่อไฟล์จากน้อยไปมาก) */}
-      {displayMode === 'grid' && sortedAndFilteredMenus.length > 0 && (
+      {displayMode === 'grid' && sortedMenus.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {sortedAndFilteredMenus.map((item, idx) => (
+          {sortedMenus.map((item, idx) => (
             <div
               key={item.id}
               onClick={() => onOpenZoom(item)}
@@ -241,7 +161,7 @@ export const CustomerView: React.FC<CustomerViewProps> = ({
         <div className="flex flex-col items-center max-w-4xl mx-auto space-y-4">
           <div className="flex items-center justify-between w-full px-2 text-xs text-slate-400">
             <span>
-              หน้า {activeBookIndex + 1} จากทั้งหมด {sortedAndFilteredMenus.length} หน้า · {currentBookMenu.fileName || 'menu.png'}
+              หน้า {activeBookIndex + 1} จากทั้งหมด {sortedMenus.length} หน้า · {currentBookMenu.fileName || 'menu.png'}
             </span>
             <div className="flex items-center gap-2">
               <button
@@ -252,12 +172,12 @@ export const CustomerView: React.FC<CustomerViewProps> = ({
                 <ChevronLeft className="w-4 h-4" />
               </button>
               <span className="font-mono text-amber-400">
-                {activeBookIndex + 1} / {sortedAndFilteredMenus.length}
+                {activeBookIndex + 1} / {sortedMenus.length}
               </span>
               <button
-                disabled={activeBookIndex === sortedAndFilteredMenus.length - 1}
+                disabled={activeBookIndex === sortedMenus.length - 1}
                 onClick={() =>
-                  setActiveBookIndex((prev) => Math.min(sortedAndFilteredMenus.length - 1, prev + 1))
+                  setActiveBookIndex((prev) => Math.min(sortedMenus.length - 1, prev + 1))
                 }
                 className="p-1.5 rounded-lg bg-slate-800 text-white disabled:opacity-30 hover:bg-slate-700 transition-colors"
               >
